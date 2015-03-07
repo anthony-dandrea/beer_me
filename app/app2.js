@@ -9,22 +9,12 @@ var request = require('request');
 
 var app = express();
 
-// Add __base to global object to share /node_modules
-// in lower directories ex: require(__base + 'path/to/module');
-global.__base = __dirname + '/';
-
-// Debug
-var debug = require('debug')('app4');
-
-// Import PWW Modules
+// Import Routes
 var routes = require('./routes/index');
-var secrets = require('./secrets');
 var users = require('./routes/users');
+// Import Secrets & PWW API Modules
+var secrets = require('./secrets');
 var utdApi = require('./api/untappd');
-
-// Mock json files
-// var brewdbMock = require('./mocks/brewdbMock.json');
-// var untappdMock = require('./mocks/untappdMock.json');
 
 // view engine setup
 app.set('views', path.join(__dirname, '/views'));
