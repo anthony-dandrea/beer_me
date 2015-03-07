@@ -1,18 +1,6 @@
 var search  = require('./searchAlgos');
-var secrets = require(__base + 'secrets');
+var secrets = require('./../secrets');
 var request = require('request');
-
-/*
-    Todo:
-
-    Beer search to get BID
-    data.response.beers.items[0].beer.bid for first
-
-    ***Modularize search similar to brewerydb***
-
-    Use Beer info to get venue with the BID
-    Search for closest long-lat according to user location
-*/
 
 var utdApi = {
 	'parseResp':

@@ -6,7 +6,6 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var request = require('request');
-var Q = require('q');
 
 var app = express();
 
@@ -21,17 +20,11 @@ var debug = require('debug')('app4');
 var routes = require('./routes/index');
 var secrets = require('./secrets');
 var users = require('./routes/users');
-/*
-    * WIP
-    * Need to make each API handling modular
-    * as fuck
-*/
-var bdbApi = require('./api/brewerydb');
 var utdApi = require('./api/untappd');
 
 // Mock json files
-var brewdbMock = require('./mocks/brewdbMock.json');
-var untappdMock = require('./mocks/untappdMock.json');
+// var brewdbMock = require('./mocks/brewdbMock.json');
+// var untappdMock = require('./mocks/untappdMock.json');
 
 // view engine setup
 app.set('views', path.join(__dirname, '/views'));
