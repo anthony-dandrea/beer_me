@@ -9,22 +9,12 @@ var request = require('request');
 
 var app = express();
 
-// Add __base to global object to share /node_modules
-// in lower directories ex: require(__base + 'path/to/module');
-global.__base = __dirname + '/';
-
-// Debug
-var debug = require('debug')('app4');
-
-// Import PWW Modules
+// Import Routes
 var routes = require('./routes/index');
-var secrets = require('./secrets');
 var users = require('./routes/users');
+// Import Secrets & PWW API Modules
+var secrets = require('./secrets');
 var utdApi = require('./api/untappd');
-
-// Mock json files
-// var brewdbMock = require('./mocks/brewdbMock.json');
-// var untappdMock = require('./mocks/untappdMock.json');
 
 // view engine setup
 app.set('views', path.join(__dirname, '/views'));
@@ -41,52 +31,30 @@ app.use(express.static(path.join(__dirname, '/../public')));
 app.use('/', routes);
 app.use('/users', users);
 
-// Send request to both APIs simutaneously
-// Use promise to return upon both requests resolving
-function getResults(beer) {
-    var untappdEndpoint = 'https://api.untappd.com/v4/search/beer?client_id=' + secrets.utdIdKey + '&client_secret=' + secrets.utdSecretKey + '&q=' + encodeURIComponent(beer);
-    return Q.all([Q.nfcall(request, brewerydbEndpoint),
-                  Q.nfcall(request, untappdEndpoint)])
-    .spread(function(brewerydbRes, untappdRes) {
-        return [brewerydbRes[1], untappdRes[1]];  // return the response body
-    })
-    .fail(function(err) {
-        console.error('error:',err);
-        return err;
-    });
-}
-
+// Our servers endpoint for handling beer search
+// and venue search.
 app.post('/api/v1/beers', function(req, res, next) {
-    // Construct the brewerydb endpoint to hit
-    var beer = req.body.beer
-    if (req.body.mock) {
-        if (beer == 'no_beer') {
-            var resp = {'breweryDB': brewdbMock.noBeer,
-                        'untappd': untappdMock}
-            res.send(JSON.stringify(resp));
-        } else if (beer == 'no_image') {
-            var resp = {'breweryDB': brewdbMock.noImage,
-                        'untappd': untappdMock}
-            res.send(JSON.stringify(resp));
-        } else {
-            var resp = {'breweryDB': brewdbMock.oneBeer,
-                        'untappd': untappdMock}
-            res.send(JSON.stringify(resp));
-        }
-    }
-    else {
-        getResults(beer).then(function(responses) {
-            var bdbResp = responses[0]
-            var utResp = responses[1]
-            var resp = {'breweryDB': bdbApi.parseResp(beer, bdbResp),
-                        'untappd': utdApi.parseResp(beer, utResp)};
-            // I'm pretty fucking sure utdApi.parseResp()
-            // Isn't resolving before fucking res.send()
-            // Asyncing right up my ass
-            debugger;
-            res.send(JSON.stringify(resp));
-        });
-    }
+  var body = req.body;
+  if (!body.location) {
+    // Just do the one call for the beer search
+    // and send FE result
+    utdApi.parseBeerResp(body).then(function(beerResponse){
+      res.send(JSON.stringify(beerResponse));
+    });
+  } else {
+    // Do two synchronous blocking calls
+    // for the beer to get info and bid
+    // then a 2nd for the venue
+    utdApi.parseBeerResp(body).then(function(beerResponse) {
+      // This call is dependent on the first and needs the bid
+      utdApi.parseVenueResp(body, beerResponse.bid).then(function(venueResponse){
+        console.log(beerResponse); // hopefully still have this in child scope
+        var resp = beerResponse.venue = (venueResponse); // add venue to response
+        console.log(resp);
+        res.send(JSON.stringify(resp));
+      });
+    });
+  }
 });
 
 // catch 404 and forward to error handler
@@ -97,7 +65,6 @@ app.use(function(req, res, next) {
 });
 
 // error handlers
-
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
