@@ -1,20 +1,19 @@
-var search  = require('./searchAlgos');
-var secrets = require('./../secrets');
-var request = require('request');
+var request     = require('request');
+var beerMock    = require('../untappdBeerMock.json');
+var venueMock   = require('../untappdVenueMock.json');
+var search      = require('./searchAlgos');
+var secrets     = require('./../secrets');
+
 
 var utdApi = {
-	'parseResp':
-		function(beer, response, userCoords) {
-            /////////////////////////////////////////
-            // Fake need to get userCoords from FE
-            var userCoords = [41.930136, -87.696007];
-            /////////////////////////////////////////
-
-            if (userCoords) {
-                console.log('about to start');
+    // Handle first untappd call for beer search
+	'parseBeerResp':
+		function(body) {
+            var beer = body.beer;
+            var getResults = function() {
+                console.log('success for beersearch');
                 var data = JSON.parse(response);
                 var potentialMatches = [];
-
                 // Loop to create an array of names
                 // compared in the search algo to best
                 // match the beer name
@@ -22,9 +21,34 @@ var utdApi = {
                     potentialMatches[idx] = elem.beer.beer_name || 'N/A';
                 });
 
+                // Make call to search beer algo
                 var matchedBeerIndex = search.searchBeer(beer, potentialMatches);
-                var matchedBeerId = data.response.beers.items[matchedBeerIndex].beer.bid;
 
+                var matchedBeerInfo = data.response.beers.items[matchedBeerIndex]
+                var matchedBeerId = data.response.beers.items[matchedBeerIndex].beer.bid;
+                console.log('beerInfo',matchedBeerInfo,'bid',matchedBeerId);
+                return {'beerInfo': matchedBeerInfo, 'bid': matchedBeerId}
+            }
+
+            if (!body.mock) {
+                var untappdBeerEndpoint = 'https://api.untappd.com/v4/search/beer?client_id=' + secrets.utdIdKey + '&client_secret=' + secrets.utdSecretKey + '&q=' + encodeURIComponent(beer);
+                request(untappdBeerEndpoint, function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        getResults(response);
+                    } else {
+                        console.log('200 for beersearch');
+                        return {'error': 'Beer search failed'};
+                    }
+                });
+            } else {
+                getResults(beerMock);
+            }
+		},
+
+    // Handle *potential* 2nd call for venue locations
+    'parseVenueResp':
+        function(body, bid) {
+                if (userCoords) {
                 // New call for venue_info using matchedBeerId
                 // /v4/beer/info/BID
                 var untappdInfoEndpoint = 'https://api.untappd.com/v4/beer/info/' + matchedBeerId + '?client_id=' + secrets.utdIdKey + '&client_secret=' + secrets.utdSecretKey;
@@ -58,7 +82,7 @@ var utdApi = {
                 // if no location given
                 return 'User did not give location'
             }
-		}
+        }
 }
 
 module.exports = utdApi;

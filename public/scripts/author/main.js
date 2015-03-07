@@ -10,7 +10,7 @@ angular.module('app', [function(){}])
     // Fake need to get userCoords from FE
     /////////////////////////////////////////
 
-    var dev = {'beer': beer, 'mock': true, 'location': [41.930136, -87.696007]},
+    var dev = {'beer': '312', 'mock': true, 'location': [41.930136, -87.696007]},
     prod    = {'beer': beer, 'mock': false};
 
     $http.post('/api/v1/beers/', dev)
