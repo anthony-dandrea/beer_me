@@ -31,6 +31,8 @@ app.use(express.static(path.join(__dirname, '/../public')));
 app.use('/', routes);
 app.use('/users', users);
 
+// Our servers endpoint for handling beer search
+// and venue search.
 app.post('/api/v1/beers', function(req, res, next) {
   var body = req.body;
   if (!body.location) {
@@ -44,6 +46,7 @@ app.post('/api/v1/beers', function(req, res, next) {
     // for the beer to get info and bid
     // then a 2nd for the venue
     utdApi.parseBeerResp(body).then(function(beerResponse) {
+      // This call is dependent on the first and needs the bid
       utdApi.parseVenueResp(body, beerResponse.bid).then(function(venueResponse){
         console.log(beerResponse); // hopefully still have this in child scope
         var resp = beerResponse.venue = (venueResponse); // add venue to response

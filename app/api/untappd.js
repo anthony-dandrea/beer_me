@@ -10,7 +10,7 @@ var utdApi = {
 	'parseBeerResp':
 		function(body) {
             var beer = body.beer;
-            var getResults = function() {
+            var getBeerResults = function(response) {
                 console.log('success for beersearch');
                 var data = JSON.parse(response);
                 var potentialMatches = [];
@@ -31,56 +31,63 @@ var utdApi = {
             }
 
             if (!body.mock) {
+                // Make actual call and get results
                 var untappdBeerEndpoint = 'https://api.untappd.com/v4/search/beer?client_id=' + secrets.utdIdKey + '&client_secret=' + secrets.utdSecretKey + '&q=' + encodeURIComponent(beer);
                 request(untappdBeerEndpoint, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
-                        getResults(response);
+                        getBeerResults(response);
                     } else {
                         console.log('200 for beersearch');
                         return {'error': 'Beer search failed'};
                     }
                 });
             } else {
-                getResults(beerMock);
+                // Use copied json for mock
+                getBeerResults(beerMock);
             }
 		},
 
     // Handle *potential* 2nd call for venue locations
     'parseVenueResp':
         function(body, bid) {
-                if (userCoords) {
-                // New call for venue_info using matchedBeerId
-                // /v4/beer/info/BID
-                var untappdInfoEndpoint = 'https://api.untappd.com/v4/beer/info/' + matchedBeerId + '?client_id=' + secrets.utdIdKey + '&client_secret=' + secrets.utdSecretKey;
+            var userCoords = body.location;
+
+            var getVenueResults = function(response) {
                 var coordsReceived = [];
                 var venuName = '';
                 var bidData = {};
-                request(untappdInfoEndpoint, function (error, response, body) {
-                  if (!error && response.statusCode == 200) {
-                    bidData = JSON.parse(body).response.beer.checkins.items;
-                    bidData.forEach(function(elem, idx) {
-                        // Make an array of the long/lats
-                        // debugger;
-                        if (elem.venue.location){
-                            coordsReceived.push([elem.venue.location.lat, elem.venue.location.lng]);
-                        } else {
-                            delete bidData[idx];
-                        }
-                    });
+                bidData = JSON.parse(body).response.beer.checkins.items;
+                bidData.forEach(function(elem, idx) {
+                    // Make an array of the long/lats
+                    // debugger;
+                    if (elem.venue.location){
+                        coordsReceived.push([elem.venue.location.lat, elem.venue.location.lng]);
+                    } else {
+                        delete bidData[idx];
+                    }
+                });
 
-                    console.log('about to search using ', userCoords,coordsReceived);
-                    closestVenueCoords = search.searchLocation(userCoords, coordsReceived);
-                    console.log('closestVenueCoords',closestVenueCoords);
-                    debugger;
-                    return bidData[closestVenueCoords.index];;
-                  } else if (error) {
-                    return 'Error with Untappd BID endpoint';
-                  }
+                console.log('about to search using', userCoords,coordsReceived);
+                closestVenueCoords = search.searchLocation(userCoords, coordsReceived);
+                console.log('closestVenueCoords',closestVenueCoords);
+                debugger;
+                return bidData[closestVenueCoords.index];
+            }
+
+            if (!body.mock) {
+                // Make actual call and get results
+                var untappdInfoEndpoint = 'https://api.untappd.com/v4/beer/info/' + matchedBeerId + '?client_id=' + secrets.utdIdKey + '&client_secret=' + secrets.utdSecretKey;
+                request(untappdInfoEndpoint, function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        getVenueResults(response);
+                    } else {
+                        return {'error': 'Venue search failed'};
+                    }
                 });
 
             } else {
-                // if no location given
-                return 'User did not give location'
+                // Use copied json for mock
+                getVenueResults(venueMock);
             }
         }
 }
