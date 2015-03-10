@@ -8,10 +8,11 @@ angular.module('app', [function(){}])
     // TODO: Get user location
     /////////////////////////////////////////
     // Fake need to get userCoords from FE
+    // 'location': [41.930136, -87.696007] is Chicago FYI
     /////////////////////////////////////////
 
     var dev = {'beer': '312', 'mock': true, 'location': [41.930136, -87.696007]},
-    prod    = {'beer': beer, 'mock': false};
+    prod    = {'beer': beer, 'mock': false, 'location': [41.930136, -87.696007]};
 
     $http.post('/api/v1/beers/', dev)
     .success(function(data) {

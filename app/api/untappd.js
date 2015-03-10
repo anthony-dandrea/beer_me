@@ -1,6 +1,6 @@
 var request     = require('request');
-var beerMock    = require('../untappdBeerMock.json');
-var venueMock   = require('../untappdVenueMock.json');
+var beerMock    = require('../mocks/untappdBeerMock.json');
+var venueMock   = require('../mocks/untappdVenueMock.json');
 var search      = require('./searchAlgos');
 var secrets     = require('./../secrets');
 
@@ -12,6 +12,7 @@ var utdApi = {
             var beer = body.beer;
             var getBeerResults = function(response) {
                 console.log('success for beersearch');
+                debugger;
                 var data = JSON.parse(response);
                 var potentialMatches = [];
                 // Loop to create an array of names
